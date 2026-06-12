@@ -2,23 +2,34 @@
 
 A Streamlit app that compares a resume and job description using Gemini AI. This version is built for Gemini only and focuses on a clean, polished scoring experience. The app includes a polished UI with a sidebar, two-column input layout, score metrics, a bar-chart breakdown, missing skills, suggestions, and learning resources.
 
+**Author:** Duvvu Lakshmi Prasanna
+
+## Live Demo
+
+🔗 [https://resume-scorer-5a-nrgw9s76um6pfsa6rgquml.streamlit.app/](https://resume-scorer-5a-nrgw9s76um6pfsa6rgquml.streamlit.app/)
+
+## Screenshots
+
+### Resume Review
+![Resume Review](Resume_Review.png)
+
+### ATS Score Result
+![Resume ATS](ResumeATS.png)
+
 ## Setup
 
 1. Create and activate the virtual environment:
-
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\activate
 ```
 
 2. Install dependencies:
-
 ```powershell
 pip install -r requirements.txt
 ```
 
 3. Add your Gemini API key to `.streamlit/secrets.toml`:
-
 ```toml
 GEMINI_API_KEY="YOUR_KEY"
 ```
@@ -42,25 +53,20 @@ Then open `http://localhost:8501`.
 2. Use this sample data to verify the score flow:
 
 ### Resume
-
 ```text
 John Doe
-
 Skills:
 Python
 Java
 DSA
 SQL
-
 Projects:
 Student Management System
 ```
 
 ### Job Description
-
 ```text
 Looking for Software Engineer.
-
 Requirements:
 Python
 Java
@@ -100,3 +106,20 @@ Problem Solving
 - Sidebar for API key entry and tips
 - Score summary cards and bar chart
 - Clear sections for missing skills, suggestions, and learning resources
+
+## Tech Stack
+
+- **Frontend/App Framework:** Streamlit
+- **AI Model:** Google Gemini API
+- **Language:** Python
+
+## Future Improvements
+
+- Support for multiple resume formats (PDF, DOCX upload)
+- Resume builder suggestions based on JD keywords
+- History tracking of previous scoring sessions
+- Multi-language resume support
+
+## License
+
+This project is open-source and available for personal and educational use.
