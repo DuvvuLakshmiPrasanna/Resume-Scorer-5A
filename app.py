@@ -1,5 +1,6 @@
 import json
 import os
+import re
 from typing import List
 
 import pandas as pd
@@ -87,6 +88,27 @@ def parse_text_response(response):
     return str(response)
 
 
+def extract_json_text(raw_text: str) -> str:
+    text = raw_text.strip()
+
+    # Remove markdown fences and surrounding explanation text.
+    text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"\s*```$", "", text).strip()
+
+    if text.startswith("{") or text.startswith("["):
+        return text
+
+    start_candidates = [idx for idx in (text.find("{"), text.find("[")) if idx != -1]
+    if start_candidates:
+        start = min(start_candidates)
+        end_char = "}" if text[start] == "{" else "]"
+        end = text.rfind(end_char)
+        if end != -1 and end > start:
+            return text[start : end + 1]
+
+    return text
+
+
 def build_prompt(resume_text: str, job_description: str) -> str:
     return (
         "You are a resume scoring assistant. Compare the candidate resume against the job description. "
@@ -100,6 +122,7 @@ def build_prompt(resume_text: str, job_description: str) -> str:
         "experience_relevance: number 0-100\n"
         "project_fit: number 0-100\n"
         "learning_resources: list of objects with skill, resource_type, link\n"
+        "Return only the JSON object. Do not include any markdown fences, labels, or extra text.\n"
         "Use concise language and valid JSON arrays/objects."
         "\nResume:\n" + resume_text + "\n\nJob Description:\n" + job_description
     )
@@ -192,11 +215,15 @@ def score_resume(resume_text: str, job_description: str, api_key: str, provider:
             )
 
     raw_text = parse_text_response(response)
+    cleaned_text = extract_json_text(raw_text)
     try:
-        parsed = json.loads(raw_text)
+        parsed = json.loads(cleaned_text)
     except json.JSONDecodeError as exc:
         raise ValueError(
-            "The model did not return valid JSON. Response was:\n" + raw_text
+            "The model did not return valid JSON. Cleaned response was:\n"
+            + cleaned_text
+            + "\n\nOriginal response was:\n"
+            + raw_text
         ) from exc
 
     return ResumeScore(**parsed)
