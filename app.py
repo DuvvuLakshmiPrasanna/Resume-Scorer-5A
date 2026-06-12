@@ -33,10 +33,6 @@ class ResumeScore(BaseModel):
         return max(0.0, min(100.0, value))
 
 
-def load_api_key() -> str:
-    return os.getenv("GEMINI_API_KEY") or st.secrets.get("GEMINI_API_KEY", "")
-
-
 def create_gemini_client(api_key: str):
     try:
         import google.generativeai as genai
@@ -244,16 +240,17 @@ def main():
 
     with st.sidebar:
         st.header("Settings")
-        default_key = load_api_key()
-        api_key = st.text_input(
-            "Gemini API key",
-            type="password",
-            value=default_key,
-            help="Add your Gemini API key from AI Studio or set GEMINI_API_KEY in .streamlit/secrets.toml.",
+        api_key = (
+            st.secrets.get("GEMINI_API_KEY", None)
+            or st.text_input(
+                "Gemini API Key",
+                type="password",
+                help="Add your Gemini API key from AI Studio or use Streamlit Secrets for deployment.",
+            )
         )
 
-        if default_key and api_key == default_key:
-            st.info("Loaded key from environment or secrets. Replace it here if it is invalid.")
+        if st.secrets.get("GEMINI_API_KEY", None):
+            st.info("Using GEMINI_API_KEY from Streamlit secrets.")
         elif not api_key:
             st.warning("Enter a valid Gemini API key to score the résumé.")
 
