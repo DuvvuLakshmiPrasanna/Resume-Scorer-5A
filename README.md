@@ -10,11 +10,11 @@ A Streamlit app that compares a resume and job description using Gemini AI. This
 
 ## Screenshots
 
-### Resume Review
-![Resume Review](Resume_Review.png)
-
 ### ATS Score Result
 ![Resume ATS](ResumeATS.png)
+
+### Resume Review
+![Resume Review](Resume_Review.png)
 
 ## Setup
 
