@@ -1,6 +1,8 @@
 # Resume Scorer
 
-A Streamlit app that compares a resume and job description using Gemini AI. This version is built for Gemini only and focuses on a clean, polished scoring experience. The app includes a polished UI with a sidebar, two-column input layout, score metrics, a bar-chart breakdown, missing skills, suggestions, and learning resources.
+A Streamlit app that compares a resume and job description using AI. This version supports both **Groq** and **Gemini** providers, with Groq as the recommended option for deployment.
+
+The app includes a polished UI with a sidebar, two-column input layout, score metrics, a bar-chart breakdown, missing skills, suggestions, and learning resources.
 
 **Author:** Duvvu Lakshmi Prasanna
 
@@ -11,28 +13,37 @@ A Streamlit app that compares a resume and job description using Gemini AI. This
 ## Screenshots
 
 ### ATS Score Result
+
 ![Resume ATS](ResumeATS.png)
 
 ### Resume Review
+
 ![Resume Review](Resume_Review.png)
 
 ## Setup
 
 1. Create and activate the virtual environment:
+
 ```powershell
 python -m venv .venv
 .\.venv\Scripts\activate
 ```
 
 2. Install dependencies:
+
 ```powershell
 pip install -r requirements.txt
 ```
 
-3. Add your Gemini API key to `.streamlit/secrets.toml`:
+3. Add your Groq or Gemini API key to `.streamlit/secrets.toml`:
+
 ```toml
-GEMINI_API_KEY="YOUR_KEY"
+GROQ_API_KEY="YOUR_GROQ_KEY"
+# or
+GEMINI_API_KEY="YOUR_GEMINI_KEY"
 ```
+
+If you supply both keys, the sidebar lets you choose which provider to use.
 
 ## Run
 
@@ -42,37 +53,42 @@ GEMINI_API_KEY="YOUR_KEY"
 
 Then open `http://localhost:8501`.
 
+## How it works
+
+- Groq: uses `groq.chat.completions.create(...)` with model `llama-3.3-70b-versatile`
+- Gemini: uses the existing Gemini client and `gemini-2.5-flash`
+- The app builds a JSON-only prompt and validates the response before rendering the score
+
 ## Testing
 
 1. Confirm the app loads with:
    - Resume text box
    - Job description text box
-   - Gemini API key field in the sidebar
+   - Provider selector in the sidebar
+   - API key field or secret-loaded provider indicator
    - Score Resume button
 
-2. Use this sample data to verify the score flow:
+2. Use this sample data to verify the flow:
 
 ### Resume
+
 ```text
 John Doe
 Skills:
 Python
 Java
-DSA
 SQL
-Projects:
-Student Management System
+Problem Solving
+
+Experience:
+3+ years building web applications and APIs.
 ```
 
 ### Job Description
+
 ```text
-Looking for Software Engineer.
-Requirements:
-Python
-Java
-SQL
-AWS
-Problem Solving
+Seeking a Software Engineer with Python, SQL, and strong problem-solving skills.
+Experience with cloud services and collaborative development is preferred.
 ```
 
 3. Click **Score Resume** and verify the app returns:
@@ -86,31 +102,36 @@ Problem Solving
 
 - `ModuleNotFoundError: No module named 'streamlit'`
   - Run `pip install streamlit`
+- `ModuleNotFoundError: No module named 'groq'`
+  - Run `pip install groq`
 - `ModuleNotFoundError: No module named 'google'`
   - Run `pip install google-genai`
 - `Invalid API Key`
-  - Create or regenerate a Gemini API key in [Google AI Studio](https://aistudio.google.com/?utm_source=chatgpt.com)
+  - Add a valid Groq key to `GROQ_API_KEY` or a valid Gemini key to `GEMINI_API_KEY`
 
 ## Files
 
 - `app.py` — Streamlit application
 - `requirements.txt` — Python dependencies
-- `.streamlit/secrets.toml` — Gemini API secret placeholder
+- `.streamlit/secrets.toml` — API secret placeholder for Groq and Gemini
 - `.streamlit/config.toml` — light-mode theme configuration
 - `acceptance_log.md` — lab acceptance log
 
-## UI Improvements
+## Notes
 
 - Wide layout for productivity
 - Two-column text input for resume and JD
 - Sidebar for API key entry and tips
 - Score summary cards and bar chart
 - Clear sections for missing skills, suggestions, and learning resources
+- For deployment, Streamlit Cloud secrets should use `GROQ_API_KEY` or `GEMINI_API_KEY`.
+- Groq is a compatible alternative when Gemini quota or key issues occur.
+- The app is scored on whether it runs, compares resume + JD, and returns AI-generated feedback.
 
 ## Tech Stack
 
 - **Frontend/App Framework:** Streamlit
-- **AI Model:** Google Gemini API
+- **AI Model:** Groq or Google Gemini
 - **Language:** Python
 
 ## Future Improvements

@@ -52,7 +52,32 @@ def create_gemini_client(api_key: str):
         ) from exc
 
 
+def create_groq_client(api_key: str):
+    try:
+        from groq import Groq
+    except ImportError as exc:
+        raise RuntimeError(
+            "Unable to import Groq client. Install the groq package."
+        ) from exc
+
+    return Groq(api_key=api_key)
+
+
 def parse_text_response(response):
+    if hasattr(response, "choices"):
+        try:
+            first_choice = response.choices[0]
+            if hasattr(first_choice, "message") and hasattr(first_choice.message, "content"):
+                return first_choice.message.content
+            if isinstance(first_choice, dict):
+                message = first_choice.get("message")
+                if isinstance(message, dict) and "content" in message:
+                    return message["content"]
+            if hasattr(first_choice, "text"):
+                return first_choice.text
+        except (IndexError, AttributeError):
+            pass
+
     if hasattr(response, "text"):
         return response.text
     if hasattr(response, "response") and hasattr(response.response, "text"):
@@ -141,18 +166,30 @@ def inject_styles():
 
 
 @st.cache_data(show_spinner=False)
-def score_resume(resume_text: str, job_description: str, api_key: str) -> ResumeScore:
-    client = create_gemini_client(api_key)
+def score_resume(resume_text: str, job_description: str, api_key: str, provider: str) -> ResumeScore:
     prompt = build_prompt(resume_text, job_description)
 
-    if hasattr(client, "generate_text"):
-        response = client.generate_text(model="gemini-2.5-flash", prompt=prompt, temperature=0)
-    else:
-        response = client.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config={"response_mime_type": "application/json"},
+    if provider == "Groq":
+        client = create_groq_client(api_key)
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0,
         )
+    else:
+        client = create_gemini_client(api_key)
+        if hasattr(client, "generate_text"):
+            response = client.generate_text(
+                model="gemini-2.5-flash",
+                prompt=prompt,
+                temperature=0,
+            )
+        else:
+            response = client.models.generate_content(
+                model="gemini-2.5-flash",
+                contents=prompt,
+                config={"response_mime_type": "application/json"},
+            )
 
     raw_text = parse_text_response(response)
     try:
@@ -231,28 +268,45 @@ def main():
 
     st.markdown("# Résumé Scorer")
     st.markdown(
-        "Use Gemini to compare a résumé to a job description and generate a professional fit score with actionable feedback."
+        "Use Groq or Gemini to compare a résumé to a job description and generate a professional fit score with actionable feedback."
     )
     st.markdown(
-        '<div class="section-card"><p><strong class="fat-text">Gemini AI</strong> powers the scoring engine, delivering actionable resume feedback that is clear, modern, and easy to act on.</p></div>',
+        '<div class="section-card"><p><strong class="fat-text">Groq or Gemini AI</strong> powers the scoring engine, delivering actionable resume feedback that is clear, modern, and easy to act on.</p></div>',
         unsafe_allow_html=True,
     )
 
     with st.sidebar:
         st.header("Settings")
-        api_key = (
-            st.secrets.get("GEMINI_API_KEY", None)
-            or st.text_input(
-                "Gemini API Key",
-                type="password",
-                help="Add your Gemini API key from AI Studio or use Streamlit Secrets for deployment.",
-            )
-        )
+        groq_key = st.secrets.get("GROQ_API_KEY")
+        gemini_key = st.secrets.get("GEMINI_API_KEY")
 
-        if st.secrets.get("GEMINI_API_KEY", None):
+        provider_options = []
+        if groq_key:
+            provider_options.append("Groq")
+        if gemini_key:
+            provider_options.append("Gemini")
+        if not provider_options:
+            provider_options = ["Groq", "Gemini"]
+
+        provider = st.selectbox("AI provider", provider_options)
+        api_key = groq_key if provider == "Groq" else gemini_key
+
+        if api_key is None:
+            api_key = st.text_input(
+                f"{provider} API Key",
+                type="password",
+                help=(
+                    "Add your API key for the selected provider. "
+                    "Use Streamlit Secrets for deployment, or paste a key here during development."
+                ),
+            )
+
+        if provider == "Groq" and groq_key:
+            st.info("Using GROQ_API_KEY from Streamlit secrets.")
+        elif provider == "Gemini" and gemini_key:
             st.info("Using GEMINI_API_KEY from Streamlit secrets.")
         elif not api_key:
-            st.warning("Enter a valid Gemini API key to score the résumé.")
+            st.warning(f"Enter a valid {provider} API key to score the résumé.")
 
         st.markdown("---")
         st.markdown(
@@ -286,19 +340,19 @@ def main():
         if not resume_text.strip() or not job_description.strip():
             st.error("Both resume and job description are required.")
         elif not api_key:
-            st.error("Gemini API key is required to score the resume.")
+            st.error(f"{provider} API key is required to score the resume.")
         else:
             with st.spinner("Scoring resume..."):
                 try:
-                    score = score_resume(resume_text, job_description, api_key)
+                    score = score_resume(resume_text, job_description, api_key, provider)
                     render_score_card(score)
                 except ValidationError as exc:
                     st.error("Response validation failed: " + str(exc))
                 except Exception as exc:
                     message = str(exc)
-                    if "API key not valid" in message or "API_KEY_INVALID" in message:
+                    if "API key not valid" in message or "API_KEY_INVALID" in message or "invalid api key" in message.lower():
                         st.error(
-                            "Invalid Gemini API key. Replace the key in the sidebar with a valid key from AI Studio."
+                            f"Invalid {provider} API key. Replace the key in the sidebar with a valid key."
                         )
                     else:
                         st.error(message)
