@@ -196,7 +196,7 @@ def score_resume(resume_text: str, job_description: str, api_key: str, provider:
         parsed = json.loads(raw_text)
     except json.JSONDecodeError as exc:
         raise ValueError(
-            "Gemini did not return valid JSON. Response was:\n" + raw_text
+            "The model did not return valid JSON. Response was:\n" + raw_text
         ) from exc
 
     return ResumeScore(**parsed)
