@@ -1,6 +1,6 @@
 # Resume Scorer
 
-A Streamlit app that compares a resume and job description using Gemini AI. The app includes a polished UI with a sidebar, two-column input layout, score metrics, a bar-chart breakdown, missing skills, suggestions, and learning resources.
+A Streamlit app that compares a resume and job description using Gemini AI. This version is built for Gemini only and focuses on a clean, polished scoring experience. The app includes a polished UI with a sidebar, two-column input layout, score metrics, a bar-chart breakdown, missing skills, suggestions, and learning resources.
 
 ## Setup
 
